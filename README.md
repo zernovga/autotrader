@@ -4,8 +4,8 @@
 
 ## **1. Infrastructure & Setup**
 
-* [ ] Настроить базовую структуру директорий (`ingest/`, `processing/`, `orders/`, `utils/`, `data/`).
-* [ ] Подготовить Dockerfile для основных сервисов.
+* [x] Настроить базовую структуру директорий (`ingest/`, `processing/`, `orders/`, `utils/`, `data/`).
+* [x] Подготовить Dockerfile для основных сервисов.
 * [ ] Поднять Docker Compose окружение:
 
   * [ ] Kafka / NATS / Redis Streams (на выбор)
