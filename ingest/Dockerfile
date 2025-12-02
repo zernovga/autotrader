@@ -1,13 +1,12 @@
 FROM python:3.13-slim
 
-WORKDIR /app
-
 RUN pip install uv
 
-COPY pyproject.toml ./
+WORKDIR /app
+
+COPY ../common /common
+COPY . .
 
 RUN uv sync --no-dev
-
-COPY . .
 
 CMD ["uv", "run", "main.py"]
