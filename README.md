@@ -8,8 +8,8 @@
 * [x] Подготовить Dockerfile для основных сервисов.
 * [ ] Поднять Docker Compose окружение:
 
-  * [ ] Kafka / NATS / Redis Streams (на выбор)
-  * [ ] Zookeeper (если Kafka)
+  * [*] Kafka / NATS / Redis Streams (на выбор)
+  * [*] Zookeeper (если Kafka)
   * [ ] Вспомогательные контейнеры (UI for Kafka, Redis Insight — опционально)
 
 ---
