@@ -1,9 +1,20 @@
 import asyncio
 import json
+from typing import Protocol
 
 from aiokafka import AIOKafkaProducer
 
 from common.config import settings
+from common.logging_config import configure_logging
+
+log = configure_logging("ingest")
+
+
+class DemoStreamer:
+    async def stream(self):
+        while True:
+            yield {"data": "streamer test message"}
+            await asyncio.sleep(2)
 
 
 class TinkoffSandboxStreamer:
@@ -31,14 +42,19 @@ class KafkaProducerWrapper:
 
 
 async def main():
-    streamer: Streamer = TinkoffSandboxStreamer()
+    print("starting main")
+
+    streamer = DemoStreamer()
     producer = KafkaProducerWrapper(settings.kafka.bootstrap_servers)
 
     await producer.start()
 
     async for msg in streamer.stream():
+        log.info("raw event", payload=msg)
         await producer.send(settings.kafka.topic_raw, msg)
 
 
 if __name__ == "__main__":
+    log.info("started")
+
     asyncio.run(main())
