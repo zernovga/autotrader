@@ -1,11 +1,9 @@
 [project]
-name = "ingest"
+name = "common"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "aiokafka>=0.12.0",
-    "common",
-    "tinkoff-investments>=0.2.0b118",
+    "pydantic-settings>=2.12.0"
 ]

@@ -10,7 +10,7 @@ class CommonSettings(BaseSettings):
 
 
 class KafkaSettings(CommonSettings):
-    bootstrap_servers: str = "kafka:9092"
+    bootstrap_servers: str = "kafka:29092"
     topic_raw: str = "market.raw"
 
 

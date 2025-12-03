@@ -4,9 +4,10 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = [
-    "pydantic-settings>=2.12.0",
-]
+
+[tool.uv.sources]
+common = { workspace = true }
+ingest = { workspace = true }
 
 [tool.uv.workspace]
 members = [
@@ -15,4 +16,5 @@ members = [
     "risk",
     "orders",
     "notifier",
+    "common",
 ]

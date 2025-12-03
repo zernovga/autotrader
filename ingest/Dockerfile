@@ -1,12 +1,13 @@
 FROM python:3.13-slim
 
-RUN pip install uv
-
 WORKDIR /app
 
-COPY ../common /common
-COPY . .
+RUN pip install uv
 
-RUN uv sync --no-dev
+COPY pyproject.toml .
+COPY common ./common
+COPY ingest ./ingest
 
-CMD ["uv", "run", "main.py"]
+RUN uv sync --no-dev --package ingest
+
+CMD ["uv", "run", "-m", "ingest.main"]
