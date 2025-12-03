@@ -1,8 +1,16 @@
 import asyncio
 import json
-from typing import Protocol
 
 from aiokafka import AIOKafkaProducer
+from tinkoff.invest import (
+    AioRequestError,
+    CandleInstrument,
+    MarketDataRequest,
+    SubscribeCandlesRequest,
+    SubscriptionAction,
+    SubscriptionInterval,
+)
+from tinkoff.invest.sandbox.async_client import AsyncSandboxClient as AsyncClient
 
 from common.config import settings
 from common.logging_config import configure_logging
@@ -18,11 +26,33 @@ class DemoStreamer:
 
 
 class TinkoffSandboxStreamer:
-    def __init__(self):
-        pass
+    def __init__(self, figi):
+        self.figi = figi
+
+    async def ensure_market_open(self, client: AsyncClient):
+        trading_status = await client.market_data.get_trading_status(figi=self.figi)
+        while not (
+            trading_status.market_order_available_flag
+            and trading_status.api_trade_available_flag
+        ):
+            log.info("Waiting for the market to open. figi=%s", self.figi)
+            await asyncio.sleep(60)
+            trading_status = await client.market_data.get_trading_status(figi=self.figi)
 
     async def stream(self):
-        pass
+        yield MarketDataRequest(
+            subscribe_candles_request=SubscribeCandlesRequest(
+                subscription_action=SubscriptionAction.SUBSCRIPTION_ACTION_SUBSCRIBE,
+                instruments=[
+                    CandleInstrument(
+                        figi=self.figi,
+                        interval=SubscriptionInterval.SUBSCRIPTION_INTERVAL_ONE_MINUTE,
+                    )
+                ],
+            )
+        )
+        while True:
+            await asyncio.sleep(1)
 
 
 class KafkaProducerWrapper:
@@ -44,14 +74,24 @@ class KafkaProducerWrapper:
 async def main():
     print("starting main")
 
-    streamer = DemoStreamer()
+    streamer = TinkoffSandboxStreamer("BBG0013HRTL0")
     producer = KafkaProducerWrapper(settings.kafka.bootstrap_servers)
 
     await producer.start()
+    while True:
+        log.info("connecting to client", token=settings.tinkoff_token)
+        async with AsyncClient(settings.tinkoff_token) as client:
+            try:
+                await streamer.ensure_market_open(client)
 
-    async for msg in streamer.stream():
-        log.info("raw event", payload=msg)
-        await producer.send(settings.kafka.topic_raw, msg)
+                async for msg in client.market_data_stream.market_data_stream(
+                    streamer.stream()
+                ):
+                    log.info("raw event", payload=msg)
+                    await producer.send(settings.kafka.topic_raw, msg)
+            except AioRequestError as e:
+                log.error("ingest error", exception=str(e))
+                break
 
 
 if __name__ == "__main__":
