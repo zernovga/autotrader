@@ -11,6 +11,7 @@ from tinkoff.invest import (
     SubscriptionInterval,
 )
 from tinkoff.invest.sandbox.async_client import AsyncSandboxClient as AsyncClient
+from tinkoff.invest.utils import quotation_to_decimal
 
 from common.config import settings
 from common.logging_config import configure_logging
@@ -74,12 +75,21 @@ class KafkaProducerWrapper:
 async def main():
     print("starting main")
 
-    streamer = TinkoffSandboxStreamer("BBG0013HRTL0")
+    figi = "BBG0013HRTL0"
+    producer = None
+    # while not producer:
+    #     try:
     producer = KafkaProducerWrapper(settings.kafka.bootstrap_servers)
+    #     log.info("connected to kafka")
+    # except KafkaConnectionError:
+    #     log.info("kafka is down, waiting")
+    #     await asyncio.sleep(5)
+
+    streamer = TinkoffSandboxStreamer(figi)
 
     await producer.start()
+    log.info("connecting to client")
     while True:
-        log.info("connecting to client", token=settings.tinkoff_token)
         async with AsyncClient(settings.tinkoff_token) as client:
             try:
                 await streamer.ensure_market_open(client)
@@ -87,11 +97,31 @@ async def main():
                 async for msg in client.market_data_stream.market_data_stream(
                     streamer.stream()
                 ):
-                    log.info("raw event", payload=msg)
-                    await producer.send(settings.kafka.topic_raw, msg)
+                    try:
+                        log.info("raw event", payload=msg)
+
+                        data = {
+                            "figi": figi,
+                            "time": msg.candle.time.isoformat(),
+                            "last_trade": msg.candle.last_trade_ts.isoformat(),
+                            "open": float(quotation_to_decimal(msg.candle.open)),
+                            "high": float(quotation_to_decimal(msg.candle.high)),
+                            "low": float(quotation_to_decimal(msg.candle.low)),
+                            "close": float(quotation_to_decimal(msg.candle.close)),
+                        }
+                        log.info("normalized event", payload=data)
+
+                        await producer.send(settings.kafka.topic_raw, data)
+
+                    except AioRequestError as e:
+                        log.error("request error", exception=str(e))
+                    except Exception as e:
+                        log.error("error", exception=str(e))
+
             except AioRequestError as e:
-                log.error("ingest error", exception=str(e))
-                break
+                log.error("request error", exception=str(e))
+            except Exception as e:
+                log.error("error", exception=str(e))
 
 
 if __name__ == "__main__":
