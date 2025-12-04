@@ -8,17 +8,17 @@
 * [x] Подготовить Dockerfile для основных сервисов.
 * [ ] Поднять Docker Compose окружение:
 
-  * [*] Kafka / NATS / Redis Streams (на выбор)
-  * [*] Zookeeper (если Kafka)
-  * [ ] Вспомогательные контейнеры (UI for Kafka, Redis Insight — опционально)
+  * [x] Kafka
+  * [x] Zookeeper
+  * [x] Вспомогательные контейнеры (UI for Kafka)
 
 ---
 
 ## **2. Market Data Ingest**
 
-* [ ] Реализовать WebSocket-клиент для брокера/биржи.
-* [ ] Нормализовать формат данных (timestamp, price, size, symbol).
-* [ ] Реализовать асинхронную отправку тиков в broker (`market.raw`).
+* [x] Реализовать WebSocket-клиент для брокера/биржи.
+* [x] Нормализовать формат данных (timestamp, price, size, symbol).
+* [x] Реализовать асинхронную отправку тиков в broker (`market.raw`).
 * [ ] Добавить логирование ошибок и reconnect-логику.
 * [ ] Создать конфиг для выбора символа (BTCUSDT, EURUSD, и т.п.).
 
