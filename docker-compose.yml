@@ -29,6 +29,19 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock%
+    # healthcheck:
+    #   test: ["CMD", "bash", "-c", "kafka-topics --bootstrap-server localhost:29092 --list >/dev/null 2>&1"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 20
+    #   start_period: 30s
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/29092"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
   
   kafka-ui:
     image: provectuslabs/kafka-ui
@@ -51,7 +64,8 @@ services:
       dockerfile: ingest/Dockerfile
     container_name: ingest
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     environment:
       KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
       KAFKA_TOPIC_RAW: market.raw
