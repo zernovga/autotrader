@@ -1,7 +1,5 @@
 import asyncio
-import json
 
-from aiokafka import AIOKafkaProducer
 from tinkoff.invest import (
     AioRequestError,
     CandleInstrument,
@@ -14,6 +12,7 @@ from tinkoff.invest.sandbox.async_client import AsyncSandboxClient as AsyncClien
 from tinkoff.invest.utils import quotation_to_decimal
 
 from common.config import settings
+from common.kafka import KafkaProducerWrapper
 from common.logging_config import configure_logging
 
 log = configure_logging("ingest")
@@ -56,34 +55,12 @@ class TinkoffSandboxStreamer:
             await asyncio.sleep(1)
 
 
-class KafkaProducerWrapper:
-    def __init__(self, servers: str):
-        self.servers = servers
-        self.producer = None
-
-    async def start(self):
-        self.producer = AIOKafkaProducer(
-            bootstrap_servers=self.servers,
-            value_serializer=lambda v: json.dumps(v).encode(),
-        )
-        await self.producer.start()
-
-    async def send(self, topic: str, value: dict):
-        await self.producer.send_and_wait(topic, value)
-
-
 async def main():
     print("starting main")
 
     figi = "BBG0013HRTL0"
-    producer = None
-    # while not producer:
-    #     try:
-    producer = KafkaProducerWrapper(settings.kafka.bootstrap_servers)
-    #     log.info("connected to kafka")
-    # except KafkaConnectionError:
-    #     log.info("kafka is down, waiting")
-    #     await asyncio.sleep(5)
+
+    producer = KafkaProducerWrapper(settings.kafka)
 
     streamer = TinkoffSandboxStreamer(figi)
 
