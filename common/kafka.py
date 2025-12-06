@@ -1,6 +1,6 @@
 import json
 
-from aiokafka import AIOKafkaProducer
+from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 
 
 def serialize_json(data: dict | list | str | int | float | None) -> bytes:
@@ -32,3 +32,34 @@ class KafkaProducerWrapper:
     async def stop(self):
         if self._producer:
             await self._producer.stop()
+
+
+class KafkaConsumerWrapper:
+    def __init__(self, config, topics: list[str]):
+        self._config = config
+        self._topics = topics
+        self._consumer: AIOKafkaConsumer | None = None
+
+    async def start(self):
+        self._consumer = AIOKafkaConsumer(
+            *self._topics,
+            bootstrap_servers=self._config.bootstrap_servers,
+            value_deserializer=deserialize_json,
+            enable_auto_commit=True,
+        )
+        await self._consumer.start()
+
+    async def consume(self):
+        """Асинхронный генератор, отдающий сообщения."""
+        if not self._consumer:
+            raise RuntimeError("Consumer is not started")
+
+        try:
+            async for msg in self._consumer:
+                yield msg.value
+        finally:
+            await self._consumer.stop()
+
+    async def stop(self):
+        if self._consumer:
+            await self._consumer.stop()
