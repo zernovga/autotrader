@@ -1,5 +1,7 @@
 # ML Autotrader
 
+> This autotrading project is for demonstration purposes only! It should not be used for real trading by any cause!
+
 # TODO:
 
 ## **1. Infrastructure & Setup**
@@ -26,15 +28,15 @@
 
 ## **3. Stream Processing (Simple Signal Logic)**
 
-* [ ] Создать воркер `signal_worker`.
-* [ ] Подписаться на поток `market.raw`.
+* [x] Создать воркер `signal_worker`.
+* [x] Подписаться на поток `market.raw`.
 * [ ] Реализовать простейшие фичи:
 
-  * [ ] MA(10)
-  * [ ] MA(30)
+  * [x] MA(10)
+  * [x] MA(30)
   * [ ] Δprice
 * [ ] Добавить правило: MA(10) > MA(30) → LONG; наоборот → SHORT.
-* [ ] Публиковать результат в `signals.candidate`.
+* [x] Публиковать результат в `signals.candidate`.
 * [ ] Добавить базовые дебаг-логи (signal generated, price, MA values).
 
 ---
