@@ -101,7 +101,42 @@ async def main():
                 log.error("error", exception=str(e))
 
 
+async def main_demo():
+    from datetime import datetime
+    from random import random
+
+    print("starting main demo")
+
+    figi = "BBG0013HRTL0"
+
+    producer = KafkaProducerWrapper(settings.kafka)
+
+    await producer.start()
+    log.info("connecting to client")
+
+    while True:
+        try:
+            data = {
+                "figi": figi,
+                "time": datetime.now().isoformat(),
+                "last_trade": datetime.now().isoformat(),
+                "open": 20 * random(),
+                "high": 20 * random(),
+                "low": 20 * random(),
+                "close": 20 * random(),
+            }
+            log.info("normalized event", payload=data)
+
+            await producer.send(settings.kafka.topic_raw, data)
+            await asyncio.sleep(1)
+
+        except Exception as e:
+            log.error("error", exception=str(e))
+
+
 if __name__ == "__main__":
     log.info("started")
-
-    asyncio.run(main())
+    if settings.demo:
+        asyncio.run(main_demo())
+    else:
+        asyncio.run(main())
