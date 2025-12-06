@@ -43,6 +43,7 @@ class IndicatorService:
         self.consumer = KafkaConsumerWrapper(
             config=settings.kafka,
             topics=[self.config.kafka.topic_raw],
+            group_id="indicators",
         )
 
     async def init(self):

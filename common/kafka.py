@@ -35,9 +35,10 @@ class KafkaProducerWrapper:
 
 
 class KafkaConsumerWrapper:
-    def __init__(self, config, topics: list[str]):
+    def __init__(self, config, topics: list[str], group_id: str):
         self._config = config
         self._topics = topics
+        self._group_id = group_id
         self._consumer: AIOKafkaConsumer | None = None
 
     async def start(self):
@@ -46,6 +47,7 @@ class KafkaConsumerWrapper:
             bootstrap_servers=self._config.bootstrap_servers,
             value_deserializer=deserialize_json,
             enable_auto_commit=True,
+            group_id=self._group_id,
         )
         await self._consumer.start()
 
