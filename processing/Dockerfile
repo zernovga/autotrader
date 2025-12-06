@@ -4,10 +4,14 @@ WORKDIR /app
 
 RUN pip install uv
 
-COPY pyproject.toml ./
+COPY pyproject.toml .
+COPY common/pyproject.toml ./common/pyproject.toml
+COPY processing/pyproject.toml ./processing/pyproject.toml
 
-RUN uv sync --no-dev
+RUN uv sync --no-dev --package processing
 
-COPY . .
+COPY common ./common
+COPY processing ./processing
 
-CMD ["uv", "run", "main.py"]
+
+CMD ["uv", "run", "-m", "processing.main"]
