@@ -24,6 +24,7 @@ class Settings(CommonSettings):
     stream: StreamSourceSettings = StreamSourceSettings()
 
     tinkoff_token: str = ""
+    demo: bool = True
 
 
 settings = Settings()
