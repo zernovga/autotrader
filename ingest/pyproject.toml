@@ -6,5 +6,6 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "common",
-    "tinkoff-investments>=0.2.0b118",
+    "tinkoff",
+    # "invest-python"
 ]

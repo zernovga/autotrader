@@ -3,12 +3,12 @@ name = "trader"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = "==3.13.7"
 dependencies = []
 
 [tool.uv.sources]
 common = { workspace = true }
-ingest = { workspace = true }
+tinkoff = { workspace = true } # FIXME: remove tinkoff when it's out if quarantine again  
 
 [tool.uv.workspace]
 members = [
@@ -18,4 +18,6 @@ members = [
     "orders",
     "notifier",
     "common",
+    "tick-storage",
+    "tinkoff" # FIXME: remove tinkoff when it's out if quarantine again  
 ]
