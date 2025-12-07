@@ -24,3 +24,5 @@ MANIFEST
 .vscode
 uv.lock
 *.pyc
+
+storage

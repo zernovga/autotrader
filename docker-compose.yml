@@ -27,6 +27,12 @@ services:
       KAFKA_LISTENERS: INSIDE://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock%
     # healthcheck:
@@ -85,3 +91,17 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
     restart: unless-stopped
+
+  tick-storage:
+    build:
+      context: .
+      dockerfile: tick-storage/Dockerfile
+    container_name: tick-storage
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
+    restart: unless-stopped
+    volumes:
+      - ./storage/ticks:/app/data
