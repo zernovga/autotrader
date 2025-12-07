@@ -15,7 +15,7 @@ members = [
     "ingest",
     "processing",
     "risk",
-    "orders",
+    "strategies",
     "notifier",
     "common",
     "tick-storage",

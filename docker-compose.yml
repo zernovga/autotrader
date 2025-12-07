@@ -105,3 +105,16 @@ services:
     restart: unless-stopped
     volumes:
       - ./storage/ticks:/app/data
+
+  strategies:
+    build:
+      context: .
+      dockerfile: strategies/Dockerfile
+    container_name: strategies
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
+      TINKOFF_TOKEN: ${TINKOFF_TOKEN}
+    restart: unless-stopped
