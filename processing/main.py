@@ -2,7 +2,7 @@ import asyncio
 from dataclasses import dataclass
 
 from common.config import Settings, settings
-from common.kafka import KafkaConsumerWrapper
+from common.kafka import KafkaConsumerWrapper, KafkaProducerWrapper
 from common.logging_config import configure_logging
 
 from .indicators import MA
@@ -46,9 +46,12 @@ class IndicatorService:
             group_id="indicators",
         )
 
+        self.producer = KafkaProducerWrapper(config=settings.kafka)
+
     async def init(self):
         """Подключает Kafka, регистрирует индикаторы."""
         await self.consumer.start()
+        await self.producer.start()
 
         log.info("IndicatorService initialized")
 
@@ -72,6 +75,14 @@ class IndicatorService:
                         figi=candle.figi,
                         result=result,
                     )
+                    msg.update(result)
+                    log.info(
+                        "indicator service result",
+                        figi=candle.figi,
+                        result=result,
+                    )
+                    
+                    await self.producer.send("market.processed", msg)
 
             except Exception as e:
                 log.error("processing error", exception=str(e))
