@@ -64,6 +64,42 @@ services:
       - zookeeper
     restart: unless-stopped
 
+  # LOGGING
+
+  loki:
+    container_name: loki
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/config.yaml
+    volumes:
+      - ./loki-config.yaml:/etc/loki/config.yaml
+
+  promtail:
+    container_name: promtail
+    image: grafana/promtail:latest
+    volumes:
+      # !! Make sure this line is present and correct !!
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/log:/var/log:ro
+      - ./promtail-positions:/tmp/positions:rw
+      - ./promtail-config.yaml:/etc/promtail/local-config.yaml
+    command: -config.file=/etc/promtail/local-config.yaml
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/grafana-data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+
+  # APP SERVICES
+
   ingest:
     build:
       context: .
