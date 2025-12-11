@@ -1,0 +1,55 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+positions:
+  filename: /tmp/positions/positions.yaml
+
+scrape_configs:
+  - job_name: docker-containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+
+    relabel_configs:
+      - source_labels: [__meta_docker_container_log_path]
+        target_label: __path__
+
+      - source_labels: [__meta_docker_container_name]
+        regex: "/(.*)"
+        target_label: container_name
+
+      - source_labels: [__meta_docker_image]
+        target_label: image
+
+      - source_labels: [__meta_docker_compose_service]
+        target_label: compose_service
+
+      - source_labels: [__meta_docker_container_name]
+        replacement: $1
+        target_label: job
+
+
+    pipeline_stages:
+      # 1. Парсим JSON (если лог JSON — он будет пойман, иначе стадия игнорируется)
+      - json:
+          expressions:
+            service: service
+            figi: payload.figi
+            log_ts: payload.time
+            open: payload.open
+            high: payload.high
+            low: payload.low
+            close: payload.close
+
+      # 2. Добавляем только безопасные label'ы (figi, service)
+      - labels:
+          service:
+          figi:
+
+      # 3. Используем timestamp из JSON, если он есть
+      - timestamp:
+          source: log_ts
+          format: RFC3339Nano
