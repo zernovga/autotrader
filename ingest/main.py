@@ -1,5 +1,8 @@
 import asyncio
 
+from common.config import settings
+from common.kafka import KafkaProducerWrapper
+from common.logging_config import configure_logging
 from tinkoff.invest import (
     AioRequestError,
     CandleInstrument,
@@ -10,10 +13,6 @@ from tinkoff.invest import (
 )
 from tinkoff.invest.sandbox.async_client import AsyncSandboxClient as AsyncClient
 from tinkoff.invest.utils import quotation_to_decimal
-
-from common.config import settings
-from common.kafka import KafkaProducerWrapper
-from common.logging_config import configure_logging
 
 log = configure_logging("ingest")
 
@@ -107,7 +106,7 @@ async def main_demo():
 
     print("starting main demo")
 
-    figi = "BBG0013HRTL0"
+    figi = "DEMO"
 
     producer = KafkaProducerWrapper(settings.kafka)
 
