@@ -1,4 +1,4 @@
-version: "3.9"
+# version: "3.9"
 
 services:
   zookeeper:
@@ -7,6 +7,7 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_OPTS: "-Dzookeeper.root.logger=WARN"
     ports:
       - "2181:2181"
 
@@ -33,22 +34,18 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+      KAFKA_LOG4J_LOGGERS: >-
+        org.apache.zookeeper=WARN, kafka.controller=WARN, kafka.log.LogCleaner=WARN, state.change.logger=WARN, org.apache.kafka.server.log.internals.LogCleaner=WARN
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock%
-    # healthcheck:
-    #   test: ["CMD", "bash", "-c", "kafka-topics --bootstrap-server localhost:29092 --list >/dev/null 2>&1"]
-    #   interval: 10s
-    #   timeout: 5s
-    #   retries: 20
-    #   start_period: 30s
     healthcheck:
-      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/29092"]
+      test: [ "CMD", "bash", "-c", "echo > /dev/tcp/localhost/29092" ]
       interval: 10s
       timeout: 5s
       retries: 20
       start_period: 30s
 
-  
   kafka-ui:
     image: provectuslabs/kafka-ui
     container_name: kafka-ui
@@ -148,6 +145,19 @@ services:
       context: .
       dockerfile: strategies/Dockerfile
     container_name: strategies
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
+      TINKOFF_TOKEN: ${TINKOFF_TOKEN}
+    restart: unless-stopped
+
+  orders:
+    build:
+      context: .
+      dockerfile: orders/Dockerfile
+    container_name: orders
     depends_on:
       kafka:
         condition: service_healthy

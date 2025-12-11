@@ -18,6 +18,7 @@ members = [
     "strategies",
     "notifier",
     "common",
-    "tick-storage",
-    "tinkoff" # FIXME: remove tinkoff when it's out if quarantine again  
+    "tick-storage", # FIXME: remove tinkoff when it's out if quarantine again
+    "tinkoff",
+    "orders",
 ]
