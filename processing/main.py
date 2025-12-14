@@ -1,52 +1,27 @@
 import asyncio
-from dataclasses import dataclass
 
 from common.config import Settings, settings
 from common.kafka import KafkaConsumerWrapper, KafkaProducerWrapper
 from common.logging_config import configure_logging
 
-from .indicators import MA
-from .instruments import InstrumentManager
+from .indicators import IndicatorMeta
 
 log = configure_logging("processing")
-
-
-@dataclass
-class Candle:
-    figi: str
-    time: float
-    last_trade: float
-    open: float
-    high: float
-    low: float
-    close: float
-
-    @classmethod
-    def from_raw(cls, data: dict) -> "Candle":
-        return cls(
-            figi=data["figi"],
-            time=data["time"],
-            last_trade=data["last_trade"],
-            open=data["open"],
-            high=data["high"],
-            low=data["low"],
-            close=data["close"],
-        )
 
 
 class IndicatorService:
     def __init__(self, config: Settings):
         self.config = config
 
-        self.manager = InstrumentManager()
-
         self.consumer = KafkaConsumerWrapper(
             config=settings.kafka,
-            topics=[self.config.kafka.topic_raw],
+            topics=["indicators.request"],
             group_id="indicators",
         )
 
         self.producer = KafkaProducerWrapper(config=settings.kafka)
+
+        self.running_indicators = {}
 
     async def init(self):
         """Подключает Kafka, регистрирует индикаторы."""
@@ -59,33 +34,30 @@ class IndicatorService:
         """Главный цикл обработки входящих свечей."""
         log.info("IndicatorService started")
 
-        async for msg in self.consumer.consume():
-            try:
-                candle = Candle.from_raw(msg)  # type: ignore # стандартизируем структуру
-                instrument = self.manager.ensure(candle.figi)
+        log.info("Available indicators", indicators=IndicatorMeta.indicators)
 
-                if not instrument.indicators:
-                    instrument.add_indicator("ma20", MA(20))
-                    instrument.add_indicator("ma50", MA(50))
+        try:
+            async for msg in self.consumer.consume():
+                log.info("Received indicator request", msg=msg)
+                if msg["indicator"] not in IndicatorMeta.indicators:
+                    log.info("Unknown indicator", indicator=msg["indicator"])
+                    continue
 
-                result = self.manager.process_message(candle)
-                if result:
-                    log.info(
-                        "indicator service result",
-                        figi=candle.figi,
-                        result=result,
-                    )
-                    msg.update(result)
-                    log.info(
-                        "indicator service result",
-                        figi=candle.figi,
-                        result=result,
-                    )
-                    
-                    await self.producer.send("market.processed", msg)
+                name = f"{msg['indicator']}{msg['indicator']}-{'-'.join(map(str, msg['params']))}"
+                if name in self.running_indicators:
+                    log.info("Indicator already running", indicator=name)
+                    continue
 
-            except Exception as e:
-                log.error("processing error", exception=str(e))
+                indicator = IndicatorMeta.indicators[msg["indicator"]](*msg["params"])
+                asyncio.create_task(indicator.run())
+                self.running_indicators[indicator.name] = indicator
+
+                log.info("Indicator started", indicator=indicator.name)
+
+        except Exception as e:
+            log.exception("processing error", exception=str(e))
+        finally:
+            await self.close()
 
     async def close(self):
         log.info("Shutting down IndicatorService...")
@@ -96,10 +68,7 @@ async def main():
     service = IndicatorService(settings)
     await service.init()
 
-    try:
-        await service.run()
-    finally:
-        await service.close()
+    await service.run()
 
 
 if __name__ == "__main__":

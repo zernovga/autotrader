@@ -1,13 +1,10 @@
 from collections import deque
-from typing import Optional, Protocol
+from typing import Optional
+
+from .base import Indicator
 
 
-class IndicatorProtocol(Protocol):
-    def update(self, candle) -> Optional[float]:
-        pass
-
-
-class MA:
+class MA(Indicator):
     """
     Simple Moving Average (SMA) indicator.
 
