@@ -1,6 +1,9 @@
+import asyncio
 import json
+from typing import AsyncGenerator
 
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
+from aiokafka.errors import UnknownTopicOrPartitionError
 
 
 def serialize_json(data: dict | list | str | int | float | None) -> bytes:
@@ -27,7 +30,14 @@ class KafkaProducerWrapper:
         if not self._producer:
             raise RuntimeError("Producer is not started")
 
-        await self._producer.send_and_wait(topic, value)
+        for _ in range(5):
+            try:
+                await self._producer.send_and_wait(topic, value)
+                return
+            except UnknownTopicOrPartitionError:
+                await asyncio.sleep(0.5)
+
+        raise RuntimeError(f"Topic {topic} not available")
 
     async def stop(self):
         if self._producer:
@@ -51,7 +61,7 @@ class KafkaConsumerWrapper:
         )
         await self._consumer.start()
 
-    async def consume(self):
+    async def consume(self) -> AsyncGenerator[dict, None]:
         """Асинхронный генератор, отдающий сообщения."""
         if not self._consumer:
             raise RuntimeError("Consumer is not started")
