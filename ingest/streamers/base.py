@@ -1,5 +1,3 @@
-from typing import AsyncGenerator
-
 from common.config import settings
 from common.kafka import KafkaProducerWrapper
 from common.logging_config import configure_logging
@@ -27,14 +25,14 @@ class Streamer(metaclass=StreamerMeta):
         self.topic = f"market.raw.{self.name}"
         self.producer = KafkaProducerWrapper(config=settings.kafka)
 
-    async def stream(self) -> AsyncGenerator | None:
+    async def stream(self):
         raise NotImplementedError
 
     async def run(self):
         await self.producer.start()
 
         try:
-            async for candle in self.stream():
+            async for candle in self.stream(): # type: ignore
                 log.info("raw event", payload=candle)
 
                 data = {

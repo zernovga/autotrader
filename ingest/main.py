@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 
 from common.config import settings
 from common.kafka import KafkaConsumerWrapper, KafkaProducerWrapper
@@ -28,20 +29,28 @@ class IngestService:
         try:
             async for msg in self.consumer.consume():
                 log.info("Received ingest request", msg=msg)
-                if msg["streamer"] not in StreamerMeta.streamers:
-                    log.info("Unknown streamer", streamer=msg["streamer"])
+                request: dict[str, Any] = msg.value
+
+                if request["streamer"] not in StreamerMeta.streamers:
+                    log.info("Unknown streamer", streamer=request["streamer"])
                     continue
 
-                name = f"{msg['streamer']}-{'-'.join(map(str, msg['params'].values()))}"
+                name = f"{request['streamer']}-{'-'.join(map(str, request['params'].values()))}"
                 if name in self.running_streamers:
-                    log.info("Streamer already running", figi=msg["figi"])
+                    log.info("Streamer already running", figi=request["figi"])
                     continue
 
-                params = msg["params"]
+                params = request["params"]
 
-                streamer = StreamerMeta.streamers[msg["streamer"]](**params)
+                streamer = StreamerMeta.streamers[request["streamer"]](**params)
 
                 asyncio.create_task(streamer.run())
+
+                self.running_streamers[name] = streamer
+
+                log.info("Streamer started", name=name)
+
+                await self.consumer.commit()
 
         except Exception as e:
             log.exception("ingest error", exception=str(e))
