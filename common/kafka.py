@@ -1,6 +1,5 @@
 import asyncio
 import json
-from typing import AsyncGenerator
 
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 from aiokafka.errors import UnknownTopicOrPartitionError
@@ -56,21 +55,22 @@ class KafkaConsumerWrapper:
             *self._topics,
             bootstrap_servers=self._config.bootstrap_servers,
             value_deserializer=deserialize_json,
-            enable_auto_commit=True,
+            enable_auto_commit=False,
             group_id=self._group_id,
         )
         await self._consumer.start()
 
-    async def consume(self) -> AsyncGenerator[dict, None]:
+    async def consume(self):
         """Асинхронный генератор, отдающий сообщения."""
         if not self._consumer:
             raise RuntimeError("Consumer is not started")
 
-        try:
-            async for msg in self._consumer:
-                yield msg.value
-        finally:
-            await self._consumer.stop()
+        async for msg in self._consumer:
+            yield msg
+
+    async def commit(self):
+        if self._consumer:
+            await self._consumer.commit()
 
     async def stop(self):
         if self._consumer:
