@@ -24,14 +24,12 @@ class IndicatorService:
         self.running_indicators = {}
 
     async def init(self):
-        """Подключает Kafka, регистрирует индикаторы."""
         await self.consumer.start()
         await self.producer.start()
 
         log.info("IndicatorService initialized")
 
     async def run(self):
-        """Главный цикл обработки входящих свечей."""
         log.info("IndicatorService started")
 
         log.info("Available indicators", indicators=IndicatorMeta.indicators)
